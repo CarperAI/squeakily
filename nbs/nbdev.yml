@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "squeakily"
+  site-url: "https://CarperAI.github.io/squeakily"
+  description: "A library for squeakily cleaning and filtering language datasets."
+  repo-branch: main
+  repo-url: "https://github.com/CarperAI/squeakily"
