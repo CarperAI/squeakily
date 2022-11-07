@@ -3,3 +3,6 @@ website:
     contents:
       - index.ipynb
       - 00_core.ipynb
+      - 01_filter.ipynb
+      - 02_clean.ipynb
+      - 03_helpers.ipynb
