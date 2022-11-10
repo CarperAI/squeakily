@@ -38,7 +38,7 @@ example, we can use the
 ``` python
 from datasets import load_dataset
 
-ds = load_dataset("wikitext", "wikitext-103-v1", split="train[:10%]")
+ds = load_dataset("wikitext", "wikitext-103-v1", split="train[:1%]")
 ```
 
 We simply need to wrap the `Dataset` object in a dictionary, with the
@@ -101,5 +101,26 @@ pipeline.run()
 > ``` python
 > pipeline.run(cleaning_first=True)
 > ```
+
+</div>
+
+If you need to run a filter or cleaner at the dataset level rather than
+the example level, you can pass `global_filters` or `global_cleaners` to
+the
+[`Pipeline.run`](https://CarperAI.github.io/squeakily/core.html#pipeline.run)
+function. For example:
+
+``` python
+from squeakily.filter import minhash_dedup
+
+pipeline.run(global_filters=[minhash_dedup])
+```
+
+<div>
+
+> **Note**
+>
+> Note: If you use global filters or cleaners, all datasets must have a
+> common column name in order to properly concatenate them.
 
 </div>

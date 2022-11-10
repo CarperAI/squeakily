@@ -7,6 +7,7 @@ __all__ = ['logger', 'Pipeline']
 import logging
 import os
 
+from datasets import concatenate_datasets, Dataset
 from rich.logging import RichHandler
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,10 @@ class Pipeline:
     
     def run(
         self,
-        cleaning_first=False # Whether to run the cleaning transformations first
+        global_filters=[], # Filters to be run at the dataset level rather than the example level
+        global_cleaners=[], # Cleaners to be run at the dataset level rather than the example level
+        cleaning_first=False, # Whether to run the cleaning transformations first
+        globals_first=False, # Whether to run the global transformations first
     ):
         """
         Run the pipeline.
@@ -55,3 +59,25 @@ class Pipeline:
                         lambda x: {column: c(x[column])},
                         num_proc=os.cpu_count(),
                     )
+        
+        if global_filters:
+            # concatenate all datasets
+            datasets = [d["dataset"] for d in self.datasources]
+            global_column = self.datasources[0]["columns"][0]
+            global_dataset = concatenate_datasets(datasets)
+
+            # Add a column representing the original dataset name
+            md = []
+            for d in datasets:
+                md.extend([d.builder_name] * len(d))
+            meta_data = Dataset.from_dict({"meta_data": md})
+            global_dataset_with_meta = concatenate_datasets([global_dataset, meta_data], axis=1)
+
+            # Run the global filters
+            for f in global_filters:
+                logger.info(f"Running global filter: {f.__name__}")
+                global_dataset_with_meta = f(global_dataset_with_meta, global_column)
+
+            # Split the dataset back up
+            for i, dataset in enumerate(datasets):
+                self.datasources[i]["dataset"] = global_dataset_with_meta.filter(lambda x: x["meta_data"] == dataset.builder_name)
