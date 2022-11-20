@@ -48,11 +48,17 @@ class Pipeline:
                     )
                 for f in datasource["filters"]:
                     logger.info(f"Running filter: {f.__name__} on {column}")
-                    dataset = dataset.filter(lambda x: f(x[column]))
+                    dataset = dataset.filter(
+                        lambda x: f(x[column]),
+                        num_proc=os.cpu_count(),
+                    )
             else:
                 for f in datasource["filters"]:
                     logger.info(f"Running filter: {f.__name__} on {column}")
-                    dataset = dataset.filter(lambda x: f(x[column]))
+                    dataset = dataset.filter(
+                        lambda x: f(x[column]),
+                        num_proc=os.cpu_count(),
+                    )
                 for c in datasource["cleaners"]:
                     logger.info(f"Running cleaner: {c.__name__} on {column}")
                     dataset = dataset.map(
@@ -80,4 +86,7 @@ class Pipeline:
 
             # Split the dataset back up
             for i, dataset in enumerate(datasets):
-                self.datasources[i]["dataset"] = global_dataset_with_meta.filter(lambda x: x["meta_data"] == dataset.builder_name)
+                self.datasources[i]["dataset"] = global_dataset_with_meta.filter(
+                    lambda x: x["meta_data"] == dataset.builder_name,
+                    num_proc=os.cpu_count(),
+                )
