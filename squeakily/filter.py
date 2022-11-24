@@ -13,11 +13,12 @@ import os
 import random
 import re
 
+import dill as pickle
 import networkit as nk
 import numpy as np
 
 from collections import Counter
-from datasets import Dataset
+from datasets import Dataset, Features, Value, Sequence
 from datasketch import LeanMinHash, MinHash, MinHashLSH
 from rich.logging import RichHandler
 from .helpers import flagged_words, get_words
@@ -29,6 +30,8 @@ logger.setLevel(logging.INFO)
 logger.addHandler(RichHandler(rich_tracebacks=True))
 logger.propagate = False
 datasets.logging.set_verbosity_error()
+# Turn off logging for datasets
+logging.getLogger("datasets").setLevel(logging.ERROR)
 
 # %% ../nbs/01_filter.ipynb 5
 def _char_rep_ratio(
@@ -307,23 +310,24 @@ def minhash_dedup(
         threshold=threshold,
         num_perm=num_perm,
     )
-
+    logger.info(f"Dataset columns: {ds.column_names}")
+    column_names = ds.column_names
     ds = ds.map(
         lambda _, idx: {"__id__": idx},
         with_indices=True,
         num_proc=os.cpu_count(),
         desc="Adding index...",
     )
-
+    logger.info(f"Dataset columns: {ds.column_names}")
     hashed_ds = ds.map(
         function=_hash_func,
         fn_kwargs={"num_perm": num_perm},
         input_columns=["__id__", column],
-        remove_columns=[column],
+        remove_columns=column_names,
         num_proc=os.cpu_count(),
         desc=f"Fingerprinting...",
     )
-
+    logger.info(f"Dataset columns: {hashed_ds.column_names}")
     with lsh.insertion_session() as session:
         for data in tqdm(hashed_ds, desc="Indexing signatures..."):
             if data["__id__"] in lsh:
@@ -349,10 +353,15 @@ def minhash_dedup(
         lambda x, y: _query_content(x, y, index=lsh),
         num_proc=os.cpu_count(),
         # new_fingerprint=hashlib.md5(pickle.dumps(conf)).hexdigest(),
+        features=Features({
+            "__id__": Value(dtype='int64', id=None),
+            "__neighbors__": Sequence(feature=Value(dtype='int64', id=None), length=-1, id=None)
+        }),
         input_columns=["__id__", "__signature__"],
         remove_columns=["__signature__"],
         desc=f"Querying...",
     )
+    logger.info(f"Dataset columns: {queried.column_names}")
 
     del lsh
     gc.collect()

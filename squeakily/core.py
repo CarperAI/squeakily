@@ -13,6 +13,8 @@ from rich.logging import RichHandler
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(RichHandler(rich_tracebacks=True))
+# Turn off logging for datasets
+logging.getLogger("datasets").setLevel(logging.ERROR)
 
 # %% ../nbs/00_core.ipynb 5
 class Pipeline:
