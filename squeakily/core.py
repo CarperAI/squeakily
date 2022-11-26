@@ -68,9 +68,12 @@ class Pipeline:
                         num_proc=os.cpu_count(),
                     )
         
-        if global_filters:
+        if len(global_filters) > 0:
             # concatenate all datasets
-            datasets = [d["dataset"] for d in self.datasources]
+            datasets = [
+                d["dataset"] for d in self.datasources
+                if not d.get("skip_global", False)
+            ]
             global_column = self.datasources[0]["columns"][0]
             global_dataset = concatenate_datasets(datasets)
 
