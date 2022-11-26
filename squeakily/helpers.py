@@ -24,7 +24,7 @@ def get_words(
 
 english_flagged_words = [
     "anal",
-    "bareback",
+    # "bareback", # not sure about this one
     "bbw",
     "bdsm",
     "blowjob",
@@ -34,7 +34,7 @@ english_flagged_words = [
     "camgirl",
     "camwhore",
     "cocksucking",
-    "cougar",
+    # "cougar", # not sure about this one
     "creampie",
     "cuckold",
     "cum",
@@ -50,7 +50,7 @@ english_flagged_words = [
     "dildos",
     "dogging",
     "doggystyle",
-    "dominatrix",
+    # "dominatrix", # not sure about this one
     "erotic",
     "fellatio",
     "femdom",
@@ -84,7 +84,7 @@ english_flagged_words = [
     "redtube",
     "rimming",
     "slutty",
-    "squirting",
+    # "squirting", # not sure about this one
     "strapon",
     "threesome",
     "vibrator",
