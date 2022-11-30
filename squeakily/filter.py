@@ -6,14 +6,12 @@ __all__ = ['logger', 'MINHASH_SEED', 'NON_ALPHA', 'lsh', 'dup_ids', 'check_char_
 # %% ../nbs/01_filter.ipynb 2
 import datasets
 import gc
-import hashlib
 import logging
 import multiprocessing
 import os
 import random
 import re
 
-import dill as pickle
 import networkit as nk
 import numpy as np
 
@@ -67,9 +65,10 @@ def _char_rep_ratio(
 
 # %% ../nbs/01_filter.ipynb 6
 def check_char_repetition(
-    document, # document to be analyzed
-    char_repetition_len=10, # length of character repetition
-    char_repetition_threshold=0.2, # threshold for character repetition
+    document,                       # document to be analyzed
+    char_repetition_len=10,         # length of character repetition
+    char_repetition_threshold=0.2,  # threshold for character repetition
+    dry_run=False,                  # if True, returns the ratio of character repetition
 ) -> bool: # returns True if document is below threshold
     """
     Checks if the document is below the character repetition threshold.
@@ -77,7 +76,10 @@ def check_char_repetition(
     char_rep_ratio = _char_rep_ratio(
         document, char_repetition_len
     )
-    return char_rep_ratio <= char_repetition_threshold
+    if dry_run:
+        return char_rep_ratio
+    else:
+        return char_rep_ratio <= char_repetition_threshold
 
 # %% ../nbs/01_filter.ipynb 8
 def check_exact_match(): pass
@@ -103,11 +105,12 @@ def _flag_word_ratio(
 
 # %% ../nbs/01_filter.ipynb 10
 def check_flagged_words(
-    document: str, # document to be analyzed
-    flagged_words: list = flagged_words["en"], # list of flagged words
-    flagged_words_threshold: float = 0.1, # threshold for flagged words
-    get_words_func: callable = get_words, # function to get words from document
-) -> bool: # returns True if document is below threshold
+    document: str,                              # document to be analyzed
+    flagged_words: list = flagged_words["en"],  # list of flagged words
+    flagged_words_threshold: float = 0.1,       # threshold for flagged words
+    get_words_func: callable = get_words,       # function to get words from document
+    dry_run: bool = False,                      # if True, returns the ratio of flagged words
+) -> bool:                                      # returns True if document is below threshold unless dry_run is True
     """
     Checks if a document contains a high percentage of flagged words.
     """
@@ -118,6 +121,9 @@ def check_flagged_words(
             flagged_words,
             get_words_func,
         )
+        if dry_run:
+            return flagged_words_ratio
+
         cond = flagged_words_ratio <= flagged_words_threshold
     return cond
 
@@ -293,12 +299,13 @@ def _find_duplicate_communities(
 
 # %% ../nbs/01_filter.ipynb 24
 def minhash_dedup(
-    ds, # The dataset to deduplicate.
-    column, # The column to use for deduplication.
-    community_detection: bool = False, # Whether to use community detection to find the duplicate communities, or to use the connected components.
-    report_false_positive_rate: bool = False, # Whether to report the false positive rate.
-    threshold: float = 0.85, # The threshold to use for deduplication.
-    num_perm: int = 128 # The number of permutations to use for minhashing.
+    ds,                                         # The dataset to deduplicate.
+    column,                                     # The column to use for deduplication.
+    community_detection: bool = False,          # Whether to use community detection to find the duplicate communities, or to use the connected components.
+    report_false_positive_rate: bool = False,   # Whether to report the false positive rate.
+    threshold: float = 0.85,                    # The threshold to use for deduplication.
+    num_perm: int = 128,                        # The number of permutations to use for minhashing.
+    dry_run: bool = False,                      # Whether to run the deduplication in dry run mode.
 ) -> Dataset:
     """
     Deduplicate the dataset using minhashing as described in the paper "Deduplicating Training Data Makes Language Models Better".
@@ -310,7 +317,6 @@ def minhash_dedup(
         threshold=threshold,
         num_perm=num_perm,
     )
-    logger.info(f"Dataset columns: {ds.column_names}")
     column_names = ds.column_names
     ds = ds.map(
         lambda _, idx: {"__id__": idx},
@@ -318,7 +324,6 @@ def minhash_dedup(
         num_proc=os.cpu_count(),
         desc="Adding index...",
     )
-    logger.info(f"Dataset columns: {ds.column_names}")
     hashed_ds = ds.map(
         function=_hash_func,
         fn_kwargs={"num_perm": num_perm},
@@ -327,7 +332,6 @@ def minhash_dedup(
         num_proc=os.cpu_count(),
         desc=f"Fingerprinting...",
     )
-    logger.info(f"Dataset columns: {hashed_ds.column_names}")
     with lsh.insertion_session() as session:
         for data in tqdm(hashed_ds, desc="Indexing signatures..."):
             if data["__id__"] in lsh:
@@ -352,7 +356,6 @@ def minhash_dedup(
     queried = hashed_ds.map(
         lambda x, y: _query_content(x, y, index=lsh),
         num_proc=os.cpu_count(),
-        # new_fingerprint=hashlib.md5(pickle.dumps(conf)).hexdigest(),
         features=Features({
             "__id__": Value(dtype='int64', id=None),
             "__neighbors__": Sequence(feature=Value(dtype='int64', id=None), length=-1, id=None)
@@ -361,13 +364,14 @@ def minhash_dedup(
         remove_columns=["__signature__"],
         desc=f"Querying...",
     )
-    logger.info(f"Dataset columns: {queried.column_names}")
 
     del lsh
     gc.collect()
 
     queried = queried.filter(
-        lambda x: len(x["__neighbors__"]) > 0, num_proc=os.cpu_count(), desc="Finding duplicates..."
+        lambda x: len(x["__neighbors__"]) > 0,
+        num_proc=os.cpu_count(),
+        desc="Finding duplicates..."
     )
     dup_ids = _find_duplicate_communities(
         records=queried,
@@ -381,10 +385,18 @@ def minhash_dedup(
     del queried
     gc.collect()
 
-    final_data = ds.filter(
-        lambda idx: idx not in dup_ids,
-        input_columns=["__id__"],
-        num_proc=os.cpu_count(),
-        desc="Filtering duplicates...",
-    )
+    if dry_run:
+        final_data = ds.map(
+            lambda idx: {"duplicate": idx in dup_ids},
+            input_columns=["__id__"],
+            num_proc=os.cpu_count(),
+            desc="Labeling duplicates...",
+        )
+    else:
+        final_data = ds.filter(
+            lambda idx: idx not in dup_ids,
+            input_columns=["__id__"],
+            num_proc=os.cpu_count(),
+            desc="Filtering duplicates...",
+        )
     return final_data

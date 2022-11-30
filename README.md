@@ -163,3 +163,25 @@ pipeline.run(global_filters=[minhash_dedup])
 > ```
 
 </div>
+
+Additionally, you can run the pipeline in a dry run mode by passing
+`dry_run=True` to the `run` function. This will make no modifications to
+the datasets’ documents, but will add additional columns to the datasets
+with the results of the filters and cleaners. For example, if you if you
+ran the pipeline with the
+[`check_char_repetition`](https://CarperAI.github.io/squeakily/filter.html#check_char_repetition)
+filter, you would get a new column called
+[`check_char_repetition`](https://CarperAI.github.io/squeakily/filter.html#check_char_repetition)
+with a float value between 0 and 1 indicating the percentage of
+characters that are repeated in the document.
+
+``` python
+
+::: {.cell}
+``` {.python .cell-code}
+pipeline = Pipeline(datasources)
+pipeline.run(dry_run=True)
+pipeline.datasources[0]["dataset"].features
+```
+
+:::
