@@ -14,7 +14,7 @@ The overall pipeline is as follows:
 <p>
 
 <img src="index_files/figure-commonmark/mermaid-figure-1.png"
-style="width:5.53in;height:0.72in" />
+style="width:5.02in;height:0.71in" />
 
 </p>
 
