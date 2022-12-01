@@ -155,7 +155,10 @@ def check_language(
     """
     lang, prob = model.get_language(document)
     if dry_run:
-        return lang, prob
+        if lang == language:
+            return prob
+        else:
+            return -1.
     else:
         return language == lang and prob > language_threshold
 
