@@ -560,6 +560,7 @@ flagged_words = {
 class FastTextLanguageDetector:
     def __init__(self, model_path: str = "/tmp/lid.176.bin"):
         import fasttext
+        self.model_path = model_path
         self.model = fasttext.load_model(model_path)
 
     def get_language(self, text):
@@ -584,9 +585,15 @@ class FastTextLanguageDetector:
                 raise Exception("Failed to download model")
         else:
             return cls(model_path=path)
+    
+    def __reduce__(self):
+        return (self.__class__, (self.model_path,))
+    
+    def __eq__(self, other):
+        return self.model_path == other.model_path
 
 
-# %% ../nbs/03_helpers.ipynb 12
+# %% ../nbs/03_helpers.ipynb 13
 class SentencePiece:
     def __init__(
         self,
@@ -601,7 +608,7 @@ class SentencePiece:
         tokenized = self.sp.encode_as_pieces(text)
         return " ".join(tokenized)
 
-# %% ../nbs/03_helpers.ipynb 13
+# %% ../nbs/03_helpers.ipynb 14
 KENLM_MODEL_REPO = "edugp/kenlm"
 
 class KenlmModel:
