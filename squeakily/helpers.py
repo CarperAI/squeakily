@@ -564,7 +564,8 @@ class FastTextLanguageDetector:
         self.model = fasttext.load_model(model_path)
 
     def get_language(self, text):
-        prediction = self.model.predict(text, k=1) # returns top 2 matching languages
+        lines = " ".join(text.splitlines())
+        prediction = self.model.predict(lines, k=1) # returns top 2 matching languages
         lang, prob = prediction[0][0].replace("__label__", ""), prediction[1][0]
         return lang, prob
 
@@ -593,7 +594,7 @@ class FastTextLanguageDetector:
         return self.model_path == other.model_path
 
 
-# %% ../nbs/03_helpers.ipynb 13
+# %% ../nbs/03_helpers.ipynb 14
 class SentencePiece:
     def __init__(
         self,
@@ -608,7 +609,7 @@ class SentencePiece:
         tokenized = self.sp.encode_as_pieces(text)
         return " ".join(tokenized)
 
-# %% ../nbs/03_helpers.ipynb 14
+# %% ../nbs/03_helpers.ipynb 15
 KENLM_MODEL_REPO = "edugp/kenlm"
 
 class KenlmModel:
