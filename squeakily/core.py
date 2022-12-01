@@ -43,17 +43,19 @@ class Pipeline:
             logger.info(f"Running datasource: {self.datasources[i]['dataset'].builder_name}")
             if cleaning_first:
                 for c in self.datasources[i]["cleaners"]:
-                    logger.info(f"Running cleaner: {c.__name__} on {column}")
+                    name = c.__name__
+                    logger.info(f"Running cleaner: {name} on {column}")
                     self.datasources[i]["dataset"] = self.datasources[i]["dataset"].map(
                         lambda x: {column: c(x[column])},
                         num_proc=os.cpu_count(),
                     )
                 for f in self.datasources[i]["filters"]:
-                    logger.info(f"Running filter: {f.__name__} on {column}")
+                    name = f.__name__
+                    logger.info(f"Running filter: {name} on {column}")
                     if dry_run:
                         logger.info(f"Running in dry-run mode")
                         self.datasources[i]["dataset"] = self.datasources[i]["dataset"].map(
-                            lambda x: {f"{f.__name__}_criteria": f(x[column], dry_run=True)},
+                            lambda x: {f"{name}_criteria": f(x[column], dry_run=True)},
                             num_proc=os.cpu_count(),
                         )
                     else:
@@ -63,11 +65,12 @@ class Pipeline:
                         )
             else:
                 for f in self.datasources[i]["filters"]:
-                    logger.info(f"Running filter: {f.__name__} on {column}")
+                    name = f.__name__
+                    logger.info(f"Running filter: {name} on {column}")
                     if dry_run:
                         logger.info(f"Running in dry-run mode")
                         self.datasources[i]["dataset"] = self.datasources[i]["dataset"].map(
-                            lambda x: {f"{f.__name__}_criteria": f(x[column], dry_run=True)},
+                            lambda x: {f"{name}_criteria": f(x[column], dry_run=True)},
                             num_proc=os.cpu_count(),
                         )
                     else:
@@ -76,7 +79,8 @@ class Pipeline:
                             num_proc=os.cpu_count(),
                         )
                 for c in self.datasources[i]["cleaners"]:
-                    logger.info(f"Running cleaner: {c.__name__} on {column}")
+                    name = c.__name__
+                    logger.info(f"Running cleaner: {name} on {column}")
                     self.datasources[i]["dataset"] = self.datasources[i]["dataset"].map(
                         lambda x: {column: c(x[column])},
                         num_proc=os.cpu_count(),
