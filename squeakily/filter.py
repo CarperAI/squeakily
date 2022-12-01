@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['logger', 'MINHASH_SEED', 'NON_ALPHA', 'lsh', 'dup_ids', 'check_char_repetition', 'check_perplexity', 'check_language',
-           'minhash_dedup']
+           'check_word_number', 'minhash_dedup']
 
 # %% ../nbs/01_filter.ipynb 2
 import datasets
@@ -158,7 +158,24 @@ def check_language(
     else:
         return language == lang and prob > language_threshold
 
-# %% ../nbs/01_filter.ipynb 19
+# %% ../nbs/01_filter.ipynb 17
+def check_word_number(
+    document, # document to be analyzed
+    min_word_threshold=5, # minimum number of words
+    max_word_threshold=100, # maximum number of words
+    get_words_func=get_words, # function to get words from document
+    dry_run=False, # if True, returns the number of words in the document
+) -> bool: # returns True if document is between the minimum and maximum thresholds
+    """
+    Checks if the document is between the minimum and maximum word thresholds.
+    """
+    words = get_words_func(document)
+    if dry_run:
+        return len(words)
+    else:
+        return len(words) >= min_word_threshold and len(words) <= max_word_threshold
+
+# %% ../nbs/01_filter.ipynb 21
 multiprocessing.set_start_method("fork", force=True)
 
 MINHASH_SEED = 115
@@ -169,7 +186,7 @@ random.seed(MINHASH_SEED)
 lsh: MinHashLSH = None
 dup_ids: set[int] = None
 
-# %% ../nbs/01_filter.ipynb 20
+# %% ../nbs/01_filter.ipynb 22
 def _hash_func(
     idx: int, # The index of the record.
     content: str, # The content to be hashed.
@@ -191,7 +208,7 @@ def _hash_func(
     m.update_batch([token.encode("utf-8") for token in {t for t in NON_ALPHA.split(content) if t}])
     return {"__signature__": m.hashvalues, "__id__": idx}
 
-# %% ../nbs/01_filter.ipynb 22
+# %% ../nbs/01_filter.ipynb 24
 def _query_content(
     idx: int, # The index of the record.
     signature: np.ndarray, # The MinHash signature of the record to be queried.
@@ -213,7 +230,7 @@ def _query_content(
         "__id__": idx,
     }
 
-# %% ../nbs/01_filter.ipynb 24
+# %% ../nbs/01_filter.ipynb 26
 def _jaccard_similarity(
     s1: str, # The first string to compare.
     s2: str # The second string to compare.
@@ -225,7 +242,7 @@ def _jaccard_similarity(
     tokens2 = set([t for t in NON_ALPHA.split(s2) if t.strip()])
     return len(tokens1 & tokens2) / max(1, len(tokens1 | tokens2))
 
-# %% ../nbs/01_filter.ipynb 26
+# %% ../nbs/01_filter.ipynb 28
 def _calculate_average_false_positive_rate(
     clusters: list[list[int]], # The clusters of duplicate records.
     reference_records: Dataset, # The reference records.
@@ -271,7 +288,7 @@ def _calculate_average_false_positive_rate(
     logger.info(f"-  Mean: {np.mean(deltas):0.2f}")
     logger.info(f"-  Std : {np.std(deltas):0.2f}")
 
-# %% ../nbs/01_filter.ipynb 27
+# %% ../nbs/01_filter.ipynb 29
 def _find_duplicate_communities(
     records: Dataset, # The dataset that contains both `__id__` and `__neighbors__`.
     community_detection: bool, # Whether to use community detection to find the duplicate communities, or to use the connected components.
@@ -328,7 +345,7 @@ def _find_duplicate_communities(
 
     return to_remove
 
-# %% ../nbs/01_filter.ipynb 28
+# %% ../nbs/01_filter.ipynb 30
 def minhash_dedup(
     ds,                                         # The dataset to deduplicate.
     column,                                     # The column to use for deduplication.

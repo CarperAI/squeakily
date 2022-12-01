@@ -6,3 +6,4 @@ website:
       - 01_filter.ipynb
       - 02_clean.ipynb
       - 03_helpers.ipynb
+      - 04_tutorials.ipynb
