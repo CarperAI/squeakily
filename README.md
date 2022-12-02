@@ -57,6 +57,7 @@ from squeakily.clean import remove_empty_lines, normalize_whitespace
 datasources = [
     {
         "dataset": ds,
+        "name": "wikitext",
         "columns": ["text"],
         "filters": [check_char_repetition, check_flagged_words],
         "cleaners": [remove_empty_lines, normalize_whitespace],
