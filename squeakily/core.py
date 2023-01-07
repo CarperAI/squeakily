@@ -27,7 +27,7 @@ class Pipeline:
     ):
         self.datasources = datasources
     
-    def __run_filter(self, dataset, column, filter_fn, dry_run):
+    def __run_filter(self, dataset, column, filter_fn, dry_run, num_proc):
         """
         Run a filter on a dataset.
         """
@@ -37,12 +37,12 @@ class Pipeline:
             logger.info(f"Running in dry-run mode")
             return dataset.map(
                 lambda x: {f"{name}_criteria": filter_fn(x[column], dry_run=True)},
-                num_proc=os.cpu_count(),
+                num_proc=num_proc,
             )
         else:
             return dataset.filter(
                 lambda x: filter_fn(x[column]),
-                num_proc=os.cpu_count(),
+                num_proc=num_proc,
             )
     
     def run(
@@ -52,6 +52,7 @@ class Pipeline:
         cleaning_first=False,   # Whether to run the cleaning transformations first
         globals_first=False,    # Whether to run the global transformations first
         dry_run=False,          # Whether to run the pipeline or only calculate the various criteria and add as a column
+        num_proc=os.cpu_count() # Number of processes to use
     ):
         """
         Run the pipeline.
@@ -65,14 +66,15 @@ class Pipeline:
                     logger.info(f"Running cleaner: {name} on {column}")
                     self.datasources[i]["dataset"] = self.datasources[i]["dataset"].map(
                         lambda x: {column: c(x[column])},
-                        num_proc=os.cpu_count(),
+                        num_proc=num_proc,
                     )
                 for f in self.datasources[i]["filters"]:
                     self.datasources[i]["dataset"] = self.__run_filter(
                         self.datasources[i]["dataset"],
                         column,
                         f,
-                        dry_run
+                        dry_run,
+                        num_proc
                     )
             else:
                 for f in self.datasources[i]["filters"]:
@@ -80,14 +82,15 @@ class Pipeline:
                         self.datasources[i]["dataset"],
                         column,
                         f,
-                        dry_run
+                        dry_run,
+                        num_proc
                     )
                 for c in self.datasources[i]["cleaners"]:
                     name = c.__name__
                     logger.info(f"Running cleaner: {name} on {column}")
                     self.datasources[i]["dataset"] = self.datasources[i]["dataset"].map(
                         lambda x: {column: c(x[column])},
-                        num_proc=os.cpu_count(),
+                        num_proc=num_proc,
                     )
 
         if len(global_filters) > 0:
@@ -117,5 +120,5 @@ class Pipeline:
                 if not d.get("skip_global", False):
                     self.datasources[i]["dataset"] = global_dataset_with_meta.filter(
                         lambda x: x["meta_data"] == d["name"],
-                        num_proc=os.cpu_count(),
+                        num_proc=num_proc,
                     )
