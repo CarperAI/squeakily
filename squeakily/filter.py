@@ -73,7 +73,7 @@ def check_compression_ratio(
     if dry_run:
         return compress_ratio
     else:
-        return compress_ratio <= compression_threshold
+        return compress_ratio > compression_threshold
 
 # %% ../nbs/01_filter.ipynb 9
 def _char_rep_ratio(
