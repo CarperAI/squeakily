@@ -3,11 +3,12 @@
 # %% auto 0
 __all__ = ['fake', 'whitespace', 'unicode_punctuation', 'normalize_whitespace', 'normalize_punctuation', 'remove_empty_lines',
            'replace_urls', 'replace_dates', 'replace_email', 'replace_phone', 'replace_ip', 'replace_credit_card',
-           'replace_ssn']
+           'replace_ssn', 'fix_utf8_encoding']
 
 # %% ../nbs/02_clean.ipynb 2
 import re
 from faker import Faker
+import ftfy
 
 fake = Faker()
 
@@ -163,3 +164,10 @@ def replace_ssn(
 ) -> str:                       # The text with social security numbers replaced
     """Replace social security numbers from text with a dummy."""
     return re.sub(r"\d{3}-\d{2}-\d{4}", dummy, text)
+
+# %% ../nbs/02_clean.ipynb 25
+def fix_utf8_encoding(
+    text: str,              # The text to fix
+) -> str:                   # The fixed text
+    """Fix utf8 text using ftfy."""
+    return ftfy.fix_text(text)
