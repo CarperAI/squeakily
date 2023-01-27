@@ -53,8 +53,10 @@ def _compress_ratio(
         zstd_cntxt = zstd.ZstdCompressor(level=compression_level)
     bts = doc.encode("utf-8")
     compressed_bts = zstd_cntxt.compress(bts)
-    # compressed_bts = zstd.compress(doc.encode("utf-8"), compression_level)
-    ratio = len(compressed_bts) / len(bts)
+    try:
+        ratio = len(compressed_bts) / len(bts)
+    except ZeroDivisionError:
+        ratio = 0
     return ratio
 
 # %% ../nbs/01_filter.ipynb 7
