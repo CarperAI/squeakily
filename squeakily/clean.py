@@ -14,7 +14,7 @@ fake = Faker()
 
 # %% ../nbs/02_clean.ipynb 4
 # From: https://github.com/bigscience-workshop/data-preparation/blob/main/preprocessing/training/01b_oscar_cleaning_and_filtering/filtering.py#L95
-whitespace={
+whitespace = {
     " ",
     " ",
     " ",
@@ -29,15 +29,14 @@ whitespace={
     "",
 }
 
+
 def normalize_whitespace(
     text: str,  # The text to normalize
-) -> str:       # The normalized text
+) -> str:  # The normalized text
     """
     Replace the various whitespace characters with the standard one.
     """
-    text = "".join(
-        [char if char not in whitespace else " " for char in text]
-    )
+    text = "".join([char if char not in whitespace else " " for char in text])
     return text
 
 # %% ../nbs/02_clean.ipynb 6
@@ -78,67 +77,66 @@ unicode_punctuation = {
     "►": "-",
 }
 
+
 def normalize_punctuation(
     text: str,  # The text to normalize
-) -> str:       # The normalized text
+) -> str:  # The normalized text
     """
     Replace the various unicode punctuation characters with the standard ones.
     """
-    text = "".join(
-        [unicode_punctuation.get(char, char) for char in text]
-    )
+    text = "".join([unicode_punctuation.get(char, char) for char in text])
     return text
 
 # %% ../nbs/02_clean.ipynb 8
 def remove_empty_lines(
     text: str,  # The text to remove empty lines from
-) -> str:       # The text with empty lines removed
+) -> str:  # The text with empty lines removed
     """
     Remove empty lines from the text.
     Solution from https://stackoverflow.com/a/3711884/5768407
     """
     lines = text.splitlines()
-    filtered = filter(lambda x: not re.match(r'^\s*$', x), lines)
+    filtered = filter(lambda x: not re.match(r"^\s*$", x), lines)
     return "\n".join(filtered)
 
 # %% ../nbs/02_clean.ipynb 10
 def replace_urls(
-    text: str,                              # The text to replace URLs in
-    dummy: str = "https://example.com/",    # The dummy text to replace URLs with
-) -> str:                                   # The text with URLs replaced
+    text: str,  # The text to replace URLs in
+    dummy: str = "https://example.com/",  # The dummy text to replace URLs with
+) -> str:  # The text with URLs replaced
     """Replace urls from text with a dummy."""
     return re.sub(r"http\S+", dummy, text)
 
 # %% ../nbs/02_clean.ipynb 12
 def replace_dates(
-    text: str,                  # The text to remove dates from
-    dummy: str = fake.date(),   # The dummy text to replace dates with
-) -> str:                       # The text with dates replaced
+    text: str,  # The text to remove dates from
+    dummy: str = fake.date(),  # The dummy text to replace dates with
+) -> str:  # The text with dates replaced
     """Replace dates from text with a dummy."""
-    return re.sub(r'\d{1,2}/\d{1,2}/\d{4}', dummy, text)
+    return re.sub(r"\d{1,2}/\d{1,2}/\d{4}", dummy, text)
 
 # %% ../nbs/02_clean.ipynb 15
 def replace_email(
-    text: str,                          # The text to replace email addresses in
-    dummy: str = fake.email(),          # The dummy text to replace email addresses with
-) -> str:                               # The text with email addresses replaced
+    text: str,  # The text to replace email addresses in
+    dummy: str = fake.email(),  # The dummy text to replace email addresses with
+) -> str:  # The text with email addresses replaced
     """Replace email addresses from text with a dummy."""
     return re.sub(r"[\w\.-]+@[\w\.-]+", dummy, text)
 
 # %% ../nbs/02_clean.ipynb 17
 def replace_phone(
-    text: str,                          # The text to replace phone numbers in
-    dummy: str = fake.phone_number(),   # The dummy text to replace phone numbers with
-) -> str:                               # The text with phone numbers replaced
+    text: str,  # The text to replace phone numbers in
+    dummy: str = fake.phone_number(),  # The dummy text to replace phone numbers with
+) -> str:  # The text with phone numbers replaced
     """Replace phone numbers from text with a dummy."""
     return re.sub(r"\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", dummy, text)
 
 # %% ../nbs/02_clean.ipynb 19
 def replace_ip(
-    text,                       # The text to replace ip addresses in
+    text,  # The text to replace ip addresses in
     dummy1: str = fake.ipv4(),  # The dummy text to replace ipv4 addresses with
     dummy2: str = fake.ipv6(),  # The dummy text to replace ipv6 addresses with
-) -> str:                       # The text with ip addresses replaced
+) -> str:  # The text with ip addresses replaced
     """
     Replace ip addresses from text with a dummy.
     Solution from https://github.com/bigcode-project/bigcode-analysis/blob/main/data_analysis/pii/utils/emails_ip_addresses_detection.py#L48
@@ -151,23 +149,23 @@ def replace_ip(
 
 # %% ../nbs/02_clean.ipynb 21
 def replace_credit_card(
-    text: str,                              # The text to replace credit card numbers in
-    dummy: str = fake.credit_card_number(), # The dummy text to replace credit card numbers with
-) -> str:                                   # The text with credit card numbers replaced
+    text: str,  # The text to replace credit card numbers in
+    dummy: str = fake.credit_card_number(),  # The dummy text to replace credit card numbers with
+) -> str:  # The text with credit card numbers replaced
     """Replace credit card numbers from text with a dummy."""
     return re.sub(r"\d{4}-\d{4}-\d{4}-\d{4}", dummy, text)
 
 # %% ../nbs/02_clean.ipynb 23
 def replace_ssn(
-    text: str,                  # The text to replace social security numbers in
-    dummy: str = fake.ssn(),    # The dummy text to replace social security numbers with
-) -> str:                       # The text with social security numbers replaced
+    text: str,  # The text to replace social security numbers in
+    dummy: str = fake.ssn(),  # The dummy text to replace social security numbers with
+) -> str:  # The text with social security numbers replaced
     """Replace social security numbers from text with a dummy."""
     return re.sub(r"\d{3}-\d{2}-\d{4}", dummy, text)
 
 # %% ../nbs/02_clean.ipynb 25
 def fix_utf8_encoding(
-    text: str,              # The text to fix
-) -> str:                   # The fixed text
+    text: str,  # The text to fix
+) -> str:  # The fixed text
     """Fix utf8 text using ftfy."""
     return ftfy.fix_text(text)

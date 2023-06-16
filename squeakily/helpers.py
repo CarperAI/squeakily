@@ -17,10 +17,10 @@ from typing import Dict
 
 # %% ../nbs/03_helpers.ipynb 6
 def get_words(
-    text: str, # the text to extract words from
+    text: str,  # the text to extract words from
 ) -> list:
     """custom regex to extract all the words in a string"""
-    return re.findall(r'\w+', text.lower())
+    return re.findall(r"\w+", text.lower())
 
 # %% ../nbs/03_helpers.ipynb 7
 # Built from native speakers, with inspiration from
@@ -7309,12 +7309,13 @@ stopwords = {
 class FastTextLanguageDetector:
     def __init__(self, model_path: str = "/tmp/lid.176.bin"):
         import fasttext
+
         self.model_path = model_path
         self.model = fasttext.load_model(model_path)
 
     def get_language(self, text):
         lines = " ".join(text.splitlines())
-        prediction = self.model.predict(lines, k=1) # returns top 2 matching languages
+        prediction = self.model.predict(lines, k=1)  # returns top 2 matching languages
         lang, prob = prediction[0][0].replace("__label__", ""), prediction[1][0]
         return lang, prob
 
@@ -7328,20 +7329,21 @@ class FastTextLanguageDetector:
         path = os.path.join(output_dir, "lid.176.bin")
         if not os.path.exists(path):
             # download pretrained model with standard lib (From: https://stackoverflow.com/questions/22676/how-to-download-a-file-over-http)
-            response = urllib.request.urlretrieve(url, )
+            response = urllib.request.urlretrieve(
+                url,
+            )
             if response:
                 return cls(model_path=os.path.join(output_dir, "lid.176.bin"))
             else:
                 raise Exception("Failed to download model")
         else:
             return cls(model_path=path)
-    
+
     def __reduce__(self):
         return (self.__class__, (self.model_path,))
-    
+
     def __eq__(self, other):
         return self.model_path == other.model_path
-
 
 # %% ../nbs/03_helpers.ipynb 15
 class SentencePiece:
@@ -7350,6 +7352,7 @@ class SentencePiece:
         model: str,
     ):
         import sentencepiece
+
         super().__init__()
         self.sp = sentencepiece.SentencePieceProcessor()
         self.sp.load(str(model))
@@ -7360,6 +7363,7 @@ class SentencePiece:
 
 # %% ../nbs/03_helpers.ipynb 16
 KENLM_MODEL_REPO = "edugp/kenlm"
+
 
 class KenlmModel:
     digit_re: re.Pattern = re.compile(r"\d")

@@ -21,12 +21,10 @@ class Pipeline:
     """
     A pipeline is a collection of datasources and their associated transformations to be run.
     """
-    def __init__(
-        self,
-        datasources # The datasources to be run
-    ):
+
+    def __init__(self, datasources):  # The datasources to be run
         self.datasources = datasources
-    
+
     def __run_filter(self, dataset, column, filter_fn, dry_run, num_proc):
         """
         Run a filter on a dataset.
@@ -44,15 +42,15 @@ class Pipeline:
                 lambda x: filter_fn(x[column]),
                 num_proc=num_proc,
             )
-    
+
     def run(
         self,
-        global_filters=[],      # Filters to be run at the dataset level rather than the example level
-        global_cleaners=[],     # Cleaners to be run at the dataset level rather than the example level
-        cleaning_first=False,   # Whether to run the cleaning transformations first
-        globals_first=False,    # Whether to run the global transformations first
-        dry_run=False,          # Whether to run the pipeline or only calculate the various criteria and add as a column
-        num_proc=os.cpu_count() # Number of processes to use
+        global_filters=[],  # Filters to be run at the dataset level rather than the example level
+        global_cleaners=[],  # Cleaners to be run at the dataset level rather than the example level
+        cleaning_first=False,  # Whether to run the cleaning transformations first
+        globals_first=False,  # Whether to run the global transformations first
+        dry_run=False,  # Whether to run the pipeline or only calculate the various criteria and add as a column
+        num_proc=os.cpu_count(),  # Number of processes to use
     ):
         """
         Run the pipeline.
@@ -70,20 +68,12 @@ class Pipeline:
                     )
                 for f in self.datasources[i]["filters"]:
                     self.datasources[i]["dataset"] = self.__run_filter(
-                        self.datasources[i]["dataset"],
-                        column,
-                        f,
-                        dry_run,
-                        num_proc
+                        self.datasources[i]["dataset"], column, f, dry_run, num_proc
                     )
             else:
                 for f in self.datasources[i]["filters"]:
                     self.datasources[i]["dataset"] = self.__run_filter(
-                        self.datasources[i]["dataset"],
-                        column,
-                        f,
-                        dry_run,
-                        num_proc
+                        self.datasources[i]["dataset"], column, f, dry_run, num_proc
                     )
                 for c in self.datasources[i]["cleaners"]:
                     name = c.__name__
@@ -96,7 +86,8 @@ class Pipeline:
         if len(global_filters) > 0:
             # concatenate all datasets
             datasets = [
-                d["dataset"] for d in self.datasources
+                d["dataset"]
+                for d in self.datasources
                 if not d.get("skip_global", False)
             ]
             global_column = self.datasources[0]["columns"][0]
@@ -108,12 +99,16 @@ class Pipeline:
                 if not d.get("skip_global", False):
                     md.extend([d["name"]] * len(d["dataset"]))
             meta_data = Dataset.from_dict({"meta_data": md})
-            global_dataset_with_meta = concatenate_datasets([global_dataset, meta_data], axis=1)
+            global_dataset_with_meta = concatenate_datasets(
+                [global_dataset, meta_data], axis=1
+            )
 
             # Run the global filters
             for f in global_filters:
                 logger.info(f"Running global filter: {f.__name__}")
-                global_dataset_with_meta = f(global_dataset_with_meta, global_column, dry_run=dry_run)
+                global_dataset_with_meta = f(
+                    global_dataset_with_meta, global_column, dry_run=dry_run
+                )
 
             # Split the dataset back up
             for i, d in enumerate(self.datasources):

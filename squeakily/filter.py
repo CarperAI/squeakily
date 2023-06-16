@@ -41,8 +41,8 @@ zstd_cntxt = None
 
 # %% ../nbs/01_filter.ipynb 6
 def _compress_ratio(
-    doc: str,               # document to be analyzed
-    compression_level: int = 3, # compression level to use
+    doc: str,  # document to be analyzed
+    compression_level: int = 3,  # compression level to use
 ) -> float:
     """
     Returns the ratio of the compressed document to the original document.
@@ -50,6 +50,7 @@ def _compress_ratio(
     global zstd_cntxt
     if zstd_cntxt is None:
         import zstandard as zstd
+
         zstd_cntxt = zstd.ZstdCompressor(level=compression_level)
     bts = doc.encode("utf-8")
     compressed_bts = zstd_cntxt.compress(bts)
@@ -61,17 +62,15 @@ def _compress_ratio(
 
 # %% ../nbs/01_filter.ipynb 7
 def check_compression_ratio(
-    document,                           # document to be analyzed
-    compression_threshold: float = 0.5, # threshold for compression ratio
-    compression_level: int = 3,         # compression level to use
-    dry_run=False,                      # if True, returns the ratio of character repetition
-) -> bool: # returns True if document is below threshold
+    document,  # document to be analyzed
+    compression_threshold: float = 0.5,  # threshold for compression ratio
+    compression_level: int = 3,  # compression level to use
+    dry_run=False,  # if True, returns the ratio of character repetition
+) -> bool:  # returns True if document is below threshold
     """
     Checks if the document is below the character repetition threshold.
     """
-    compress_ratio = _compress_ratio(
-        document, compression_level=compression_level
-    )
+    compress_ratio = _compress_ratio(document, compression_level=compression_level)
     if dry_run:
         return compress_ratio
     else:
@@ -79,22 +78,19 @@ def check_compression_ratio(
 
 # %% ../nbs/01_filter.ipynb 9
 def _char_rep_ratio(
-    doc: str, # document to be analyzed
-    char_rep_len: int, # length of character repetition
+    doc: str,  # document to be analyzed
+    char_rep_len: int,  # length of character repetition
 ) -> float:
     """
     Returns the ratio of character repetitions in a document.
     """
+
     def calc_ngrams(doc, n):
-        char_ngrams = [
-            doc[i : i + n] for i in range(len(doc) - n + 1)
-        ]
+        char_ngrams = [doc[i : i + n] for i in range(len(doc) - n + 1)]
         freq_char_ngrams = Counter(char_ngrams)
         return freq_char_ngrams
 
-    freq_char_ngrams = calc_ngrams(
-        doc, char_rep_len
-    )
+    freq_char_ngrams = calc_ngrams(doc, char_rep_len)
     if len(freq_char_ngrams) == 0:
         return 0
     freq_char_ngrams = list(freq_char_ngrams.values())
@@ -104,24 +100,20 @@ def _char_rep_ratio(
         int(np.sqrt(len(freq_char_ngrams))),
         len(freq_char_ngrams) - val_one,
     )
-    char_rep_ratio = sum(
-        freq_char_ngrams[:num_rep_char_ngrams]
-    ) / sum(freq_char_ngrams)
+    char_rep_ratio = sum(freq_char_ngrams[:num_rep_char_ngrams]) / sum(freq_char_ngrams)
     return char_rep_ratio
 
 # %% ../nbs/01_filter.ipynb 10
 def check_char_repetition(
-    document,                       # document to be analyzed
-    char_repetition_len=10,         # length of character repetition
+    document,  # document to be analyzed
+    char_repetition_len=10,  # length of character repetition
     char_repetition_threshold=0.2,  # threshold for character repetition
-    dry_run=False,                  # if True, returns the ratio of character repetition
-) -> bool: # returns True if document is below threshold
+    dry_run=False,  # if True, returns the ratio of character repetition
+) -> bool:  # returns True if document is below threshold
     """
     Checks if the document is below the character repetition threshold.
     """
-    char_rep_ratio = _char_rep_ratio(
-        document, char_repetition_len
-    )
+    char_rep_ratio = _char_rep_ratio(document, char_repetition_len)
     if dry_run:
         return char_rep_ratio
     else:
@@ -129,31 +121,31 @@ def check_char_repetition(
 
 # %% ../nbs/01_filter.ipynb 12
 def _flag_word_ratio(
-    doc: str, # document to be analyzed
-    flagged_words: list, # list of flagged words
-    get_words_func: callable, # function to get words from document
-) -> float: # returns ratio of flagged words in document
+    doc: str,  # document to be analyzed
+    flagged_words: list,  # list of flagged words
+    get_words_func: callable,  # function to get words from document
+) -> float:  # returns ratio of flagged words in document
     """
     Returns the ratio of flagged words in a document.
     """
     words = get_words_func(doc)
     if not words:
-        return 0.
-    flagged_words_ratio = len(
-        [word for word in words if word in flagged_words]
-    ) / len(words)
+        return 0.0
+    flagged_words_ratio = len([word for word in words if word in flagged_words]) / len(
+        words
+    )
     if flagged_words_ratio > 1.0:
         flagged_words_ratio = 1.0
     return flagged_words_ratio
 
 # %% ../nbs/01_filter.ipynb 13
 def check_flagged_words(
-    document: str,                              # document to be analyzed
+    document: str,  # document to be analyzed
     flagged_words: list = flagged_words["en"],  # list of flagged words
-    flagged_words_threshold: float = 0.1,       # threshold for flagged words
-    get_words_func: callable = get_words,       # function to get words from document
-    dry_run: bool = False,                      # if True, returns the ratio of flagged words
-) -> bool:                                      # returns True if document is below threshold unless dry_run is True
+    flagged_words_threshold: float = 0.1,  # threshold for flagged words
+    get_words_func: callable = get_words,  # function to get words from document
+    dry_run: bool = False,  # if True, returns the ratio of flagged words
+) -> bool:  # returns True if document is below threshold unless dry_run is True
     """
     Checks if a document contains a high percentage of flagged words.
     """
@@ -172,11 +164,11 @@ def check_flagged_words(
 
 # %% ../nbs/01_filter.ipynb 16
 def check_perplexity(
-    document, # document to be analyzed
-    perplexity_threshold=10_000, # threshold for perplexity
-    model=None, # model to calculate perplexity
-    dry_run=False, # if True, returns the perplexity of the document
-) -> bool: # returns True if document is below threshold
+    document,  # document to be analyzed
+    perplexity_threshold=10_000,  # threshold for perplexity
+    model=None,  # model to calculate perplexity
+    dry_run=False,  # if True, returns the perplexity of the document
+) -> bool:  # returns True if document is below threshold
     """
     Checks if the document is below the perplexity threshold.
     """
@@ -188,12 +180,12 @@ def check_perplexity(
 
 # %% ../nbs/01_filter.ipynb 19
 def check_language(
-    document, # document to be analyzed
-    language="en", # language to check
-    language_threshold=0.9, # threshold for language
-    model=None, # model to check language
-    dry_run=False, # if True, returns the language of the document
-) -> bool: # returns True if document is below threshold
+    document,  # document to be analyzed
+    language="en",  # language to check
+    language_threshold=0.9,  # threshold for language
+    model=None,  # model to check language
+    dry_run=False,  # if True, returns the language of the document
+) -> bool:  # returns True if document is below threshold
     """
     Checks if the document is below the language threshold.
     """
@@ -202,18 +194,18 @@ def check_language(
         if lang == language:
             return prob
         else:
-            return -1.
+            return -1.0
     else:
         return language == lang and prob > language_threshold
 
 # %% ../nbs/01_filter.ipynb 21
 def check_word_number(
-    document, # document to be analyzed
-    min_word_threshold=5, # minimum number of words
-    max_word_threshold=100, # maximum number of words
-    get_words_func=get_words, # function to get words from document
-    dry_run=False, # if True, returns the number of words in the document
-) -> bool: # returns True if document is between the minimum and maximum thresholds
+    document,  # document to be analyzed
+    min_word_threshold=5,  # minimum number of words
+    max_word_threshold=100,  # maximum number of words
+    get_words_func=get_words,  # function to get words from document
+    dry_run=False,  # if True, returns the number of words in the document
+) -> bool:  # returns True if document is between the minimum and maximum thresholds
     """
     Checks if the document is between the minimum and maximum word thresholds.
     """
@@ -225,34 +217,33 @@ def check_word_number(
 
 # %% ../nbs/01_filter.ipynb 23
 def check_stop_word_ratio(
-    document, # document to be analyzed
-    stop_word_threshold=stopword_ratios['en'], # threshold for stop words
-    stop_words=stopwords['en'], # list of stop words
-    get_words_func=get_words, # function to get words from document
-    dry_run=False, # if True, returns the ratio of stop words in the document
-) -> bool: # returns True if document is below the threshold
-	"""
-	Checks if the document contains a high percentage of stop words.
-	"""
-	cond = True
-	if stop_words:
-		stop_word_ratio = _flag_word_ratio(
-			document,
-			stop_words,
-			get_words_func,
-		)
-		if dry_run:
-			return stop_word_ratio
-		else:
-			cond = stop_word_ratio <= stop_word_threshold
-	return cond
-
+    document,  # document to be analyzed
+    stop_word_threshold=stopword_ratios["en"],  # threshold for stop words
+    stop_words=stopwords["en"],  # list of stop words
+    get_words_func=get_words,  # function to get words from document
+    dry_run=False,  # if True, returns the ratio of stop words in the document
+) -> bool:  # returns True if document is below the threshold
+    """
+    Checks if the document contains a high percentage of stop words.
+    """
+    cond = True
+    if stop_words:
+        stop_word_ratio = _flag_word_ratio(
+            document,
+            stop_words,
+            get_words_func,
+        )
+        if dry_run:
+            return stop_word_ratio
+        else:
+            cond = stop_word_ratio <= stop_word_threshold
+    return cond
 
 # %% ../nbs/01_filter.ipynb 25
 def check_code_parsability(
-    document, # document to be analyzed
-    program_language="python", # programming language to check
-) -> bool: # returns True if the code is parsable
+    document,  # document to be analyzed
+    program_language="python",  # programming language to check
+) -> bool:  # returns True if the code is parsable
     """
     Checks if the document contains parsable code.
     """
@@ -275,11 +266,11 @@ dup_ids: set[int] = None
 
 # %% ../nbs/01_filter.ipynb 30
 def _hash_func(
-    idx: int, # The index of the record.
-    content: str, # The content to be hashed.
+    idx: int,  # The index of the record.
+    content: str,  # The content to be hashed.
     *,
-    num_perm: int # The number of permutations to use in the MinHash object.
-) -> dict[str, any]: # The MinHash signature and the index of the record.
+    num_perm: int  # The number of permutations to use in the MinHash object.
+) -> dict[str, any]:  # The MinHash signature and the index of the record.
     """
     Embed the content of a record into a MinHash object. This function should be
     used with multiprocessing and it scales well with the number of cores.
@@ -292,16 +283,18 @@ def _hash_func(
     dtype('uint64')
     """
     m = MinHash(num_perm=num_perm, seed=MINHASH_SEED)
-    m.update_batch([token.encode("utf-8") for token in {t for t in NON_ALPHA.split(content) if t}])
+    m.update_batch(
+        [token.encode("utf-8") for token in {t for t in NON_ALPHA.split(content) if t}]
+    )
     return {"__signature__": m.hashvalues, "__id__": idx}
 
 # %% ../nbs/01_filter.ipynb 32
 def _query_content(
-    idx: int, # The index of the record.
-    signature: np.ndarray, # The MinHash signature of the record to be queried.
+    idx: int,  # The index of the record.
+    signature: np.ndarray,  # The MinHash signature of the record to be queried.
     *,
-    index: MinHashLSH # The MinHashLSH index. It is shared across all processes when using multiprocessing with fork without copy.
-) -> dict[str, any]: # The query result.
+    index: MinHashLSH  # The MinHashLSH index. It is shared across all processes when using multiprocessing with fork without copy.
+) -> dict[str, any]:  # The query result.
     """
     Query the MinHashLSH index for the record. This function can be used with multiprocessing
     as long as the index is shared across processes.
@@ -319,9 +312,8 @@ def _query_content(
 
 # %% ../nbs/01_filter.ipynb 34
 def _jaccard_similarity(
-    s1: str, # The first string to compare.
-    s2: str # The second string to compare.
-) -> float: # The Jaccard similarity between the two strings.
+    s1: str, s2: str  # The first string to compare.  # The second string to compare.
+) -> float:  # The Jaccard similarity between the two strings.
     """
     Calculate the jaccard similarity between two code snippets.
     """
@@ -331,10 +323,10 @@ def _jaccard_similarity(
 
 # %% ../nbs/01_filter.ipynb 36
 def _calculate_average_false_positive_rate(
-    clusters: list[list[int]], # The clusters of duplicate records.
-    reference_records: Dataset, # The reference records.
-    threshold: float, # The threshold to use for calculating the false positive rate.
-    column: str, # The column to use for calculating the false positive rate.
+    clusters: list[list[int]],  # The clusters of duplicate records.
+    reference_records: Dataset,  # The reference records.
+    threshold: float,  # The threshold to use for calculating the false positive rate.
+    column: str,  # The column to use for calculating the false positive rate.
 ) -> None:
     """
     Calculate the average false positive rate within each cluster. The false positives are defined as
@@ -356,7 +348,9 @@ def _calculate_average_false_positive_rate(
                 if i == j:
                     continue
                 # TODO This can be redundant but we only calculate this for a small sample
-                similarity = _jaccard_similarity(reference_records[x][column], reference_records[y][column])
+                similarity = _jaccard_similarity(
+                    reference_records[x][column], reference_records[y][column]
+                )
                 max_similarity = max(max_similarity, similarity)
                 if max_similarity >= threshold:
                     is_false_positive = False
@@ -377,14 +371,16 @@ def _calculate_average_false_positive_rate(
 
 # %% ../nbs/01_filter.ipynb 37
 def _find_duplicate_communities(
-    records: Dataset, # The dataset that contains both `__id__` and `__neighbors__`.
-    community_detection: bool, # Whether to use community detection to find the duplicate communities, or to use the connected components.
-    report_false_positive_rate: bool = False, # Whether to report the false positive rate.
-    reference_records: Dataset = None, # The reference records. It can be an iterable or a Dataset. It is only used when `report_false_positive_rate` is True.
-    threshold: float = 0.85, # The threshold to use for calculating the false positive rate.
-    column: str = "content", # The column to use for calculating the false positive rate.
+    records: Dataset,  # The dataset that contains both `__id__` and `__neighbors__`.
+    community_detection: bool,  # Whether to use community detection to find the duplicate communities, or to use the connected components.
+    report_false_positive_rate: bool = False,  # Whether to report the false positive rate.
+    reference_records: Dataset = None,  # The reference records. It can be an iterable or a Dataset. It is only used when `report_false_positive_rate` is True.
+    threshold: float = 0.85,  # The threshold to use for calculating the false positive rate.
+    column: str = "content",  # The column to use for calculating the false positive rate.
     verbose: bool = False,
-) -> set[int]: # The set of duplicate ids that should be removed, leaving only one id in each community.
+) -> set[
+    int
+]:  # The set of duplicate ids that should be removed, leaving only one id in each community.
     """
     Find the duplicate communities from the queried dataset.
     """
@@ -407,7 +403,10 @@ def _find_duplicate_communities(
         for component in tqdm(components, desc="Iterating over components..."):
             component = sorted(component)
             to_remove.update(component[1:])
-            if len(samples) < SAMPLE_SIZE and SAMPLE_MAX_SIZE > len(component) >= SAMPLE_MIN_SIZE:
+            if (
+                len(samples) < SAMPLE_SIZE
+                and SAMPLE_MAX_SIZE > len(component) >= SAMPLE_MIN_SIZE
+            ):
                 samples.append(component[:])
     else:
         algo = nk.community.PLM(g, refine=False)
@@ -419,7 +418,10 @@ def _find_duplicate_communities(
         for i in tqdm(communities, desc="Iterating over communities..."):
             ids = partition.getMembers(i)
             to_remove.update(sorted(ids)[1:])
-            if len(samples) < SAMPLE_SIZE and SAMPLE_MAX_SIZE > len(ids) >= SAMPLE_MIN_SIZE:
+            if (
+                len(samples) < SAMPLE_SIZE
+                and SAMPLE_MAX_SIZE > len(ids) >= SAMPLE_MIN_SIZE
+            ):
                 samples.append(ids)
 
     if report_false_positive_rate and verbose:
@@ -434,13 +436,13 @@ def _find_duplicate_communities(
 
 # %% ../nbs/01_filter.ipynb 38
 def minhash_dedup(
-    ds,                                         # The dataset to deduplicate.
-    column,                                     # The column to use for deduplication.
-    community_detection: bool = False,          # Whether to use community detection to find the duplicate communities, or to use the connected components.
-    report_false_positive_rate: bool = False,   # Whether to report the false positive rate.
-    threshold: float = 0.85,                    # The threshold to use for deduplication.
-    num_perm: int = 128,                        # The number of permutations to use for minhashing.
-    dry_run: bool = False,                      # Whether to run the deduplication in dry run mode.
+    ds,  # The dataset to deduplicate.
+    column,  # The column to use for deduplication.
+    community_detection: bool = False,  # Whether to use community detection to find the duplicate communities, or to use the connected components.
+    report_false_positive_rate: bool = False,  # Whether to report the false positive rate.
+    threshold: float = 0.85,  # The threshold to use for deduplication.
+    num_perm: int = 128,  # The number of permutations to use for minhashing.
+    dry_run: bool = False,  # Whether to run the deduplication in dry run mode.
 ) -> Dataset:
     """
     Deduplicate the dataset using minhashing as described in the paper "Deduplicating Training Data Makes Language Models Better".
@@ -476,7 +478,7 @@ def minhash_dedup(
                 LeanMinHash(seed=MINHASH_SEED, hashvalues=data["__signature__"]),
                 check_duplication=False,
             )
-    
+
     gc.disable()
     gc.freeze()
 
@@ -491,10 +493,14 @@ def minhash_dedup(
     queried = hashed_ds.map(
         lambda x, y: _query_content(x, y, index=lsh),
         num_proc=os.cpu_count(),
-        features=Features({
-            "__id__": Value(dtype='int64', id=None),
-            "__neighbors__": Sequence(feature=Value(dtype='int64', id=None), length=-1, id=None)
-        }),
+        features=Features(
+            {
+                "__id__": Value(dtype="int64", id=None),
+                "__neighbors__": Sequence(
+                    feature=Value(dtype="int64", id=None), length=-1, id=None
+                ),
+            }
+        ),
         input_columns=["__id__", "__signature__"],
         remove_columns=["__signature__"],
         desc=f"Querying...",
@@ -506,7 +512,7 @@ def minhash_dedup(
     queried = queried.filter(
         lambda x: len(x["__neighbors__"]) > 0,
         num_proc=os.cpu_count(),
-        desc="Finding duplicates..."
+        desc="Finding duplicates...",
     )
     dup_ids = _find_duplicate_communities(
         records=queried,
