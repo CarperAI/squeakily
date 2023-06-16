@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['logger', 'zstd_cntxt', 'MINHASH_SEED', 'NON_ALPHA', 'lsh', 'dup_ids', 'check_compression_ratio',
            'check_char_repetition', 'check_flagged_words', 'check_perplexity', 'check_language', 'check_word_number',
-           'check_stop_word_ratio', 'minhash_dedup']
+           'check_stop_word_ratio', 'check_code_parsability', 'minhash_dedup']
 
 # %% ../nbs/01_filter.ipynb 2
 import datasets
@@ -248,7 +248,23 @@ def check_stop_word_ratio(
 	return cond
 
 
-# %% ../nbs/01_filter.ipynb 27
+# %% ../nbs/01_filter.ipynb 25
+def check_code_parsability(
+    document, # document to be analyzed
+    program_language="python", # programming language to check
+) -> bool: # returns True if the code is parsable
+    """
+    Checks if the document contains parsable code.
+    """
+    import code_tokenize as ctok
+
+    try:
+        ctok.tokenize(document, lang=program_language, syntax_error="raise")
+        return True
+    except SyntaxError:
+        return False
+
+# %% ../nbs/01_filter.ipynb 29
 MINHASH_SEED = 115
 NON_ALPHA = re.compile("[^A-Za-z_0-9]")
 
@@ -257,7 +273,7 @@ random.seed(MINHASH_SEED)
 lsh: MinHashLSH = None
 dup_ids: set[int] = None
 
-# %% ../nbs/01_filter.ipynb 28
+# %% ../nbs/01_filter.ipynb 30
 def _hash_func(
     idx: int, # The index of the record.
     content: str, # The content to be hashed.
@@ -279,7 +295,7 @@ def _hash_func(
     m.update_batch([token.encode("utf-8") for token in {t for t in NON_ALPHA.split(content) if t}])
     return {"__signature__": m.hashvalues, "__id__": idx}
 
-# %% ../nbs/01_filter.ipynb 30
+# %% ../nbs/01_filter.ipynb 32
 def _query_content(
     idx: int, # The index of the record.
     signature: np.ndarray, # The MinHash signature of the record to be queried.
@@ -301,7 +317,7 @@ def _query_content(
         "__id__": idx,
     }
 
-# %% ../nbs/01_filter.ipynb 32
+# %% ../nbs/01_filter.ipynb 34
 def _jaccard_similarity(
     s1: str, # The first string to compare.
     s2: str # The second string to compare.
@@ -313,7 +329,7 @@ def _jaccard_similarity(
     tokens2 = set([t for t in NON_ALPHA.split(s2) if t.strip()])
     return len(tokens1 & tokens2) / max(1, len(tokens1 | tokens2))
 
-# %% ../nbs/01_filter.ipynb 34
+# %% ../nbs/01_filter.ipynb 36
 def _calculate_average_false_positive_rate(
     clusters: list[list[int]], # The clusters of duplicate records.
     reference_records: Dataset, # The reference records.
@@ -359,7 +375,7 @@ def _calculate_average_false_positive_rate(
     logger.info(f"-  Mean: {np.mean(deltas):0.2f}")
     logger.info(f"-  Std : {np.std(deltas):0.2f}")
 
-# %% ../nbs/01_filter.ipynb 35
+# %% ../nbs/01_filter.ipynb 37
 def _find_duplicate_communities(
     records: Dataset, # The dataset that contains both `__id__` and `__neighbors__`.
     community_detection: bool, # Whether to use community detection to find the duplicate communities, or to use the connected components.
@@ -416,7 +432,7 @@ def _find_duplicate_communities(
 
     return to_remove
 
-# %% ../nbs/01_filter.ipynb 36
+# %% ../nbs/01_filter.ipynb 38
 def minhash_dedup(
     ds,                                         # The dataset to deduplicate.
     column,                                     # The column to use for deduplication.
