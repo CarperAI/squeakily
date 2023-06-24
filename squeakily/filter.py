@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['logger', 'zstd_cntxt', 'MINHASH_SEED', 'NON_ALPHA', 'lsh', 'dup_ids', 'check_compression_ratio',
            'check_char_repetition', 'check_flagged_words', 'check_perplexity', 'check_language', 'check_word_number',
-           'check_stop_word_ratio', 'check_code_parsability', 'minhash_dedup']
+           'check_stop_word_ratio', 'check_code_parsability', 'check_labels', 'minhash_dedup']
 
 # %% ../nbs/01_filter.ipynb 2
 import datasets
@@ -255,7 +255,23 @@ def check_code_parsability(
     except SyntaxError:
         return False
 
-# %% ../nbs/01_filter.ipynb 29
+# %% ../nbs/01_filter.ipynb 27
+def check_labels(
+    document,  # document to be analyzed
+    labels: list,  # list of labels to check the document against
+    model=None,  # model to check label
+    dry_run=False,  # if True, returns the tags of the document
+) -> bool:  # returns True if document relates to any of the labels
+    """
+    Checks if the document relates to any of the labels.
+    """
+    pred_labels = model(document)
+    if dry_run:
+        return pred_labels
+    else:
+        return any([label in pred_labels for label in labels])
+
+# %% ../nbs/01_filter.ipynb 31
 MINHASH_SEED = 115
 NON_ALPHA = re.compile("[^A-Za-z_0-9]")
 
@@ -264,7 +280,7 @@ random.seed(MINHASH_SEED)
 lsh: MinHashLSH = None
 dup_ids: set[int] = None
 
-# %% ../nbs/01_filter.ipynb 30
+# %% ../nbs/01_filter.ipynb 32
 def _hash_func(
     idx: int,  # The index of the record.
     content: str,  # The content to be hashed.
@@ -288,7 +304,7 @@ def _hash_func(
     )
     return {"__signature__": m.hashvalues, "__id__": idx}
 
-# %% ../nbs/01_filter.ipynb 32
+# %% ../nbs/01_filter.ipynb 34
 def _query_content(
     idx: int,  # The index of the record.
     signature: np.ndarray,  # The MinHash signature of the record to be queried.
@@ -310,7 +326,7 @@ def _query_content(
         "__id__": idx,
     }
 
-# %% ../nbs/01_filter.ipynb 34
+# %% ../nbs/01_filter.ipynb 36
 def _jaccard_similarity(
     s1: str, s2: str  # The first string to compare.  # The second string to compare.
 ) -> float:  # The Jaccard similarity between the two strings.
@@ -321,7 +337,7 @@ def _jaccard_similarity(
     tokens2 = set([t for t in NON_ALPHA.split(s2) if t.strip()])
     return len(tokens1 & tokens2) / max(1, len(tokens1 | tokens2))
 
-# %% ../nbs/01_filter.ipynb 36
+# %% ../nbs/01_filter.ipynb 38
 def _calculate_average_false_positive_rate(
     clusters: list[list[int]],  # The clusters of duplicate records.
     reference_records: Dataset,  # The reference records.
@@ -369,7 +385,7 @@ def _calculate_average_false_positive_rate(
     logger.info(f"-  Mean: {np.mean(deltas):0.2f}")
     logger.info(f"-  Std : {np.std(deltas):0.2f}")
 
-# %% ../nbs/01_filter.ipynb 37
+# %% ../nbs/01_filter.ipynb 39
 def _find_duplicate_communities(
     records: Dataset,  # The dataset that contains both `__id__` and `__neighbors__`.
     community_detection: bool,  # Whether to use community detection to find the duplicate communities, or to use the connected components.
@@ -434,7 +450,7 @@ def _find_duplicate_communities(
 
     return to_remove
 
-# %% ../nbs/01_filter.ipynb 38
+# %% ../nbs/01_filter.ipynb 40
 def minhash_dedup(
     ds,  # The dataset to deduplicate.
     column,  # The column to use for deduplication.

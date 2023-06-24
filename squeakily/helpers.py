@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['english_flagged_words', 'flagged_words', 'stopword_ratios', 'stopwords', 'KENLM_MODEL_REPO', 'get_words',
-           'FastTextLanguageDetector', 'SentencePiece', 'KenlmModel']
+           'FastTextLanguageDetector', 'SentencePiece', 'KenlmModel', 'LLMLabelerParser', 'LLMLabeler']
 
 # %% ../nbs/03_helpers.ipynb 2
 import os
@@ -12,6 +12,7 @@ import unicodedata
 import urllib.request
 
 from huggingface_hub import cached_download, hf_hub_url
+from pydantic import BaseModel, Field
 from requests.exceptions import HTTPError
 from typing import Dict
 
@@ -7536,3 +7537,67 @@ class KenlmModel:
             KENLM_MODEL_REPO, filename=f"{model_dataset}/{language}.sp.model"
         )
         self.sentence_piece_model_dir = cached_download(sentence_piece_model_url)
+
+# %% ../nbs/03_helpers.ipynb 20
+class LLMLabelerParser(BaseModel):
+    labels: list[str] = Field(
+        ..., title="Labels", description="Labels that the LLM classifies the text as"
+    )
+
+
+class LLMLabeler:
+    def __init__(
+        self,
+        instruction: str,
+        labels: list[str],
+        model_name: str = "gpt-3.5-turbo",
+        api_key: str = None,
+        model_type: str = "openai",
+    ):
+        from langchain.output_parsers import PydanticOutputParser
+        from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+        from langchain.prompts import PromptTemplate
+        from langchain.prompts.chat import (
+            ChatPromptTemplate,
+            SystemMessagePromptTemplate,
+            HumanMessagePromptTemplate,
+        )
+
+        self.instruction = instruction
+        self.labels = labels
+        # Set up a parser + inject instructions into the prompt template.
+        self.parser = PydanticOutputParser(pydantic_object=LLMLabelerParser)
+        prompt = PromptTemplate(
+            template="{instruction}\n{labels}\n{format_instructions}\n",
+            input_variables=["instruction", "labels"],
+            partial_variables={
+                "format_instructions": self.parser.get_format_instructions()
+            },
+        )
+        system_message_prompt = SystemMessagePromptTemplate(prompt=prompt)
+        human_template = "{text}"
+        human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+        self.chat_template = ChatPromptTemplate.from_messages(
+            [system_message_prompt, human_message_prompt]
+        )
+
+        if model_type == "azure":
+            raise NotImplementedError("Azure models are not supported yet")
+        elif model_type == "openai":
+            self.model = ChatOpenAI(
+                openai_api_key=api_key, model_name=model_name, temperature=0
+            )
+        else:
+            raise ValueError(f"Model type {model_type} is not supported")
+
+    def __call__(self, text: str):
+        messages = self.chat_template.format_prompt(
+            instruction=self.instruction, labels=self.labels, text=text
+        ).to_messages()
+        output = self.model(messages)
+        predicted_labels = self.parser.parse(output.content)
+        # check if all the predicted tags are in the list of tags
+        assert all(
+            [label in self.labels for label in predicted_labels.labels]
+        ), f"Predicted labels {predicted_labels.labels} are not in the list of tags {self.labels}"
+        return predicted_labels.labels
