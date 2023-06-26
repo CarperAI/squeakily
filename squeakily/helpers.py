@@ -14,7 +14,7 @@ import urllib.request
 from huggingface_hub import cached_download, hf_hub_url
 from pydantic import BaseModel, Field
 from requests.exceptions import HTTPError
-from typing import Dict
+from typing import Dict, List
 
 # %% ../nbs/03_helpers.ipynb 6
 def get_words(
@@ -7540,7 +7540,7 @@ class KenlmModel:
 
 # %% ../nbs/03_helpers.ipynb 20
 class LLMLabelerParser(BaseModel):
-    labels: list[str] = Field(
+    labels: List = Field(
         ..., title="Labels", description="Labels that the LLM classifies the text as"
     )
 
@@ -7549,7 +7549,7 @@ class LLMLabeler:
     def __init__(
         self,
         instruction: str,
-        labels: list[str],
+        labels: List,
         model_name: str = "gpt-3.5-turbo",
         api_key: str = None,
         model_type: str = "openai",
