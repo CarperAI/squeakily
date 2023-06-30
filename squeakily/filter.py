@@ -24,6 +24,7 @@ from rich.logging import RichHandler
 from .helpers import flagged_words, get_words
 from .helpers import stopwords, stopword_ratios
 from tqdm.auto import tqdm
+from typing import Set
 
 # %% ../nbs/01_filter.ipynb 3
 logger = logging.getLogger(__name__)
@@ -278,7 +279,7 @@ NON_ALPHA = re.compile("[^A-Za-z_0-9]")
 random.seed(MINHASH_SEED)
 
 lsh: MinHashLSH = None
-dup_ids: set[int] = None
+dup_ids: Set = None
 
 # %% ../nbs/01_filter.ipynb 32
 def _hash_func(
@@ -394,9 +395,7 @@ def _find_duplicate_communities(
     threshold: float = 0.85,  # The threshold to use for calculating the false positive rate.
     column: str = "content",  # The column to use for calculating the false positive rate.
     verbose: bool = False,
-) -> set[
-    int
-]:  # The set of duplicate ids that should be removed, leaving only one id in each community.
+) -> Set:  # The set of duplicate ids that should be removed, leaving only one id in each community.
     """
     Find the duplicate communities from the queried dataset.
     """
@@ -408,7 +407,7 @@ def _find_duplicate_communities(
         for y in record["__neighbors__"]:
             g.addEdge(record["__id__"], y, addMissing=True)
 
-    to_remove: set[int] = set()
+    to_remove: Set = set()
     samples: list[list[int]] = []
     if not community_detection:
         cc = nk.components.ConnectedComponents(g)
