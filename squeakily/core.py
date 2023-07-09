@@ -119,9 +119,15 @@ class Pipeline:
                         num_proc=num_proc,
                     )
 
-    def export_to_path(self, export_path):
+    def export_to_path(self, export_path, output_type="csv", json_orient="records"):
         """
         Export the cleaned & filtered dataset to a desired export path
+
+        Args:
+            export_path(str): Path to directory
+            output_type(str, optional, default "csv"): Output type of the file to export as
+            json_orient (str, optional, default "records"): Indication of expected JSON string format
+                for more: https://github.com/pandas-dev/pandas/blob/v2.0.3/pandas/core/generic.py#L2262-L2547
         """
         try:
             os.makedirs(export_path, exist_ok=True)
@@ -131,10 +137,18 @@ class Pipeline:
 
         for i, datasource in enumerate(self.datasources):
             name = datasource["name"]
-            filename = f"{name}.csv"
+            filename = f"{name}.{output_type}"
             filepath = os.path.join(export_path, filename)
             try:
-                datasource["dataset"].to_csv(filepath, index=False)
+                if output_type == "csv":
+                    datasource["dataset"].to_csv(filepath, index=False)
+                elif output_type == "json":
+                    logger.info(f"JSON indication setted as {json_orient}")
+                    datasource["dataset"].to_json(filepath, orient=json_orient)
+                else:
+                    logger.error(
+                        f"Invalid output_type: {output_type}. Skipping export for {name} dataset."
+                    )
                 logger.info(f"Exported {name} dataset to {filepath}")
             except Exception as e:
                 logger.error(
