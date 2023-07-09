@@ -117,3 +117,36 @@ class Pipeline:
                         lambda x: x["meta_data"] == d["name"],
                         num_proc=num_proc,
                     )
+
+    def export_to_path(self, export_path, output_type="csv"):
+        """
+        Export the cleaned & filtered dataset to a desired export path
+
+        Args:
+            export_path(str): Path to directory
+            output_type(str, optional param): Output type of the file to export as
+        """
+        try:
+            os.makedirs(export_path, exist_ok=True)
+        except OSError as e:
+            logger.error(f"Failed to create directory: {export_path}. Error: {str(e)}")
+            return
+
+        for i, datasource in enumerate(self.datasources):
+            name = datasource["name"]
+            filename = f"{name}.csv"
+            filepath = os.path.join(export_path, filename)
+            try:
+                if output_type == "csv":
+                    datasource["dataset"].to_csv(filepath, index=False)
+                elif output_type == "json":
+                    datasource["dataset"].to_json(filepath, index=False)
+                else:
+                    logger.error(
+                        f"Invalid output_type: {output_type}. Skipping export for {name} dataset."
+                    )
+                logger.info(f"Exported {name} dataset to {filepath}")
+            except Exception as e:
+                logger.error(
+                    f"Failed to export {name} dataset to {filepath}. Error: {str(e)}"
+                )
