@@ -142,7 +142,9 @@ class Pipeline:
                 elif output_type == "json":
                     datasource["dataset"].to_json(filepath, index=False)
                 else:
-                    logger.error(f"Invalid output_type: {output_type}. Skipping export for {name} dataset.")
+                    logger.error(
+                        f"Invalid output_type: {output_type}. Skipping export for {name} dataset."
+                    )
                 logger.info(f"Exported {name} dataset to {filepath}")
             except Exception as e:
                 logger.error(
