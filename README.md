@@ -106,6 +106,23 @@ pipeline.run()
 
 > **Note**
 >
+> Note: If you want to to export the processed data source to a desired
+> path, you can specify an export path and the output type (csv or json)
+> in the `export_to_path` function.
+>
+> ``` python
+> export_path = "/path/to/desired/path"
+> output_types = ['csv', 'json'] # Optional, default is "csv"
+> json_indication = "records" # Optional, default is "records"
+> pipeline.export_to_path(export_path, output_types[1], json_indication=indication)
+> ```
+
+</div>
+
+<div>
+
+> **Note**
+>
 > Note: If you want to run cleaners first, you can pass
 > `cleaning_first=True` to the `run` function.
 >
