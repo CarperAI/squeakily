@@ -89,12 +89,6 @@ from squeakily.core import Pipeline
 
 pipeline = Pipeline(datasources)
 pipeline.run()
-
-# optional function call to export the processed data source to a desired path
-# export_path = "/path/to/desired/path"
-# output_types = ['csv', 'json'] - Optional, default is "csv"
-# json_indication = "records" - Optional, default is "records"
-# pipeline.export_to_path(export_path, output_types[1], json_indication=indication)
 ```
 
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7fbfbf; text-decoration-color: #7fbfbf">[11/16/22 04:32:57] </span><span style="color: #000080; text-decoration-color: #000080">INFO    </span> Running datasource: wikitext                                                <a href="file:///fsx/home-nathan/work/squeakily/squeakily/core.py" target="_blank"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">core.py</span></a><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">:</span><a href="file:///fsx/home-nathan/work/squeakily/squeakily/core.py#41" target="_blank"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">41</span></a>
@@ -107,6 +101,23 @@ pipeline.run()
 </pre>
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7fbfbf; text-decoration-color: #7fbfbf">[11/16/22 04:32:59] </span><span style="color: #000080; text-decoration-color: #000080">INFO    </span> Running cleaner: normalize_whitespace on text                               <a href="file:///fsx/home-nathan/work/squeakily/squeakily/core.py" target="_blank"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">core.py</span></a><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">:</span><a href="file:///fsx/home-nathan/work/squeakily/squeakily/core.py#57" target="_blank"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">57</span></a>
 </pre>
+
+<div>
+
+> **Note**
+>
+> Note: If you want to to export the processed data source to a desired
+> path, you can specify an export path and the output type (csv or json)
+> in the `export_to_path` function.
+>
+> ``` python
+> export_path = "/path/to/desired/path"
+> output_types = ['csv', 'json'] # Optional, default is "csv"
+> json_indication = "records" # Optional, default is "records"
+> pipeline.export_to_path(export_path, output_types[1], json_indication=indication)
+> ```
+
+</div>
 
 <div>
 
