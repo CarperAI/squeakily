@@ -395,7 +395,9 @@ def _find_duplicate_communities(
     threshold: float = 0.85,  # The threshold to use for calculating the false positive rate.
     column: str = "content",  # The column to use for calculating the false positive rate.
     verbose: bool = False,
-) -> Set:  # The set of duplicate ids that should be removed, leaving only one id in each community.
+) -> (
+    Set
+):  # The set of duplicate ids that should be removed, leaving only one id in each community.
     """
     Find the duplicate communities from the queried dataset.
     """
