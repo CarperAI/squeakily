@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['fake', 'whitespace', 'unicode_punctuation', 'normalize_whitespace', 'normalize_punctuation', 'remove_empty_lines',
            'replace_urls', 'replace_dates', 'replace_email', 'replace_phone', 'replace_ip', 'replace_credit_card',
-           'replace_ssn', 'fix_utf8_encoding', 'replace_nsfw']
+           'replace_ssn', 'fix_utf8_encoding', 'clean_code_license', 'replace_nsfw']
 
 # %% ../nbs/02_clean.ipynb 2
 import re
@@ -172,6 +172,39 @@ def fix_utf8_encoding(
     return ftfy.fix_text(text)
 
 # %% ../nbs/02_clean.ipynb 27
+def clean_code_license(
+    code: str,  # The code to clean
+    language: str = "python",  # The language of the code
+    min_lines: int = 3,  # The minimum number of lines that need to be removed
+):
+    import code_ast
+    from code_ast import ASTVisitor
+    from code_ast.ast import LEAVE_WHITELIST
+
+    class FirstNonCommentVisitor(ASTVisitor):
+        def __init__(self):
+            self.passed_global_node = False
+            self.first_node = None
+
+        def visit(self, node):
+            if not self.passed_global_node:
+                self.passed_global_node = True
+                return
+            if self.first_node is None:
+                if node.child_count > 0 or node.type in LEAVE_WHITELIST:
+                    self.first_node = node
+
+    """Remove the license or other boilerplate comments from the code."""
+    ast = code_ast.ast(code, lang=language)
+    visitor = FirstNonCommentVisitor()
+    ast.visit(visitor)
+    start_line = visitor.first_node.start_point[0]
+    if start_line < min_lines:
+        return code
+    else:
+        return "\n".join(code.splitlines()[start_line:])
+
+# %% ../nbs/02_clean.ipynb 29
 def replace_nsfw(
     text: str,  # The text to replace NSFW words in
     nsfw_words_csv: str,  # Path to the CSV file containing list of NSFW words
