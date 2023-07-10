@@ -3,10 +3,11 @@
 # %% auto 0
 __all__ = ['fake', 'whitespace', 'unicode_punctuation', 'normalize_whitespace', 'normalize_punctuation', 'remove_empty_lines',
            'replace_urls', 'replace_dates', 'replace_email', 'replace_phone', 'replace_ip', 'replace_credit_card',
-           'replace_ssn', 'fix_utf8_encoding']
+           'replace_ssn', 'fix_utf8_encoding', 'replace_nsfw']
 
 # %% ../nbs/02_clean.ipynb 2
 import re
+import csv
 from faker import Faker
 import ftfy
 
@@ -169,3 +170,24 @@ def fix_utf8_encoding(
 ) -> str:  # The fixed text
     """Fix utf8 text using ftfy."""
     return ftfy.fix_text(text)
+
+# %% ../nbs/02_clean.ipynb 27
+def replace_nsfw(
+    text: str,  # The text to replace NSFW words in
+    nsfw_words_csv: str,  # Path to the CSV file containing list of NSFW words
+) -> str:  # The text return to be replaced
+    """Replace NSFW words from text with an empty string."""
+    try:
+      with open(nsfw_words_csv, 'r') as file:
+            reader = csv.reader(file)
+            nsfw_words = [row[0] for row in reader][1:]  # Exclude the header row
+    except (FileNotFoundError, IndexError) as e:
+        print(f"Error! NSFW dictionary could not be found or indexed: {e}")
+        return text
+    
+    for word in nsfw_words:
+        pattern = r"\b" + re.escape(word) + r"\b\s*"
+        text = re.sub(pattern, "", text, flags=re.IGNORECASE)
+    
+    return text
+# %%
